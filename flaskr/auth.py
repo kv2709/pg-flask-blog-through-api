@@ -12,8 +12,9 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from flaskr.db import tp_to_dict
+from flaskr.db import tp_to_dict, get_conn_db, BASE_URL
 
+import json
 import requests
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -41,11 +42,11 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        url_req = "http://127.0.0.1:8000/api/" + str(user_id) + "/author"
+        url_req = BASE_URL + str(user_id) + "/author"
         r = requests.get(url_req)
         g.user = r.json()
 
-# ===============================================================
+
 @bp.route("/register", methods=("GET", "POST"))
 def register():
     """Register a new user.
@@ -57,34 +58,42 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = get_conn_db()
-        cur = conn.cursor()
+        # conn = get_conn_db()
+        # cur = conn.cursor()
 
         error = None
-        cur.execute("SELECT id FROM author WHERE username = %s", (username,))
-        auth_cur = cur.fetchone()
+        user = None
+
+        url_req = BASE_URL + username + "/author"
+        r = requests.get(url_req)
+        # Подумать над логикой обработки исключений
+        if r.status_code == 200:
+            resp = r.json()
+            if resp["username"] == "Not_Found":
+                error = None
+            else:
+                error = "User {0} is already registered.".format(username)
 
         if not username:
             error = "Username is required."
         elif not password:
             error = "Password is required."
-        elif auth_cur is not None:
-            error = "User {0} is already registered.".format(username)
+        # elif user is not None:
+        #     error = "User {0} is already registered.".format(username)
 
         if error is None:
-            # the name is available, store it in the database and go to
-            # the login page
-            cur.execute(
-                "INSERT INTO author (username, password) VALUES (%s, %s)",
-                (username, generate_password_hash(password)),
-            )
-            cur.close()
-            conn.commit()
-            conn.close()
-            message = "You registered as {0}. You may login and create, " \
+            password_hash = generate_password_hash(password)
+            url_req = BASE_URL + "author_new"
+            headers = {'content-type': 'application/json'}
+            data_user = {"username": username, "password_hash": password_hash}
+            r = requests.post(url_req, data=json.dumps(data_user), headers=headers)
+            if r.status_code == 200:
+                message = "You registered as {0}. You may login and create, " \
                       "edit and delete your post!".format(username)
-            flash(message)
-            return redirect(url_for("auth.login"))
+                flash(message)
+                return redirect(url_for("auth.login"))
+            else:
+                error = "Not Registered -- " + str(r.status_code)
 
         flash(error)
 
@@ -97,19 +106,15 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        conn = get_conn_db()
-        cur = conn.cursor()
 
         error = None
         user = None
-        cur.execute("SELECT * FROM author WHERE username = %s", (username,))
-        auth_cur = cur.fetchone()
-        if auth_cur is not None:
-            user = tp_to_dict(auth_cur, cur)
 
-        cur.close()
-        conn.commit()
-        conn.close()
+        url_req = BASE_URL + username + "/author"
+        r = requests.get(url_req)
+
+        if r.status_code == 200:
+            user = r.json()
 
         if user is None:
             error = "Incorrect username."
