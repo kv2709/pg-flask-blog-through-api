@@ -12,7 +12,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from flaskr.db import tp_to_dict, get_conn_db, BASE_URL
+from flaskr.db import BASE_URL
 
 import json
 import requests
@@ -42,9 +42,10 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        url_req = BASE_URL + str(user_id) + "/author"
-        r = requests.get(url_req)
-        g.user = r.json()
+        url_req = BASE_URL + "author/" + str(user_id)
+        req = requests.get(url_req)
+        g.user = req.json()
+        print("load_logged_in_user")
 
 
 @bp.route("/register", methods=("GET", "POST"))
@@ -58,18 +59,15 @@ def register():
         username = request.form["username"]
         password = request.form["password"]
 
-        # conn = get_conn_db()
-        # cur = conn.cursor()
-
         error = None
         user = None
 
-        url_req = BASE_URL + username + "/author"
-        r = requests.get(url_req)
+        url_req = BASE_URL + "author/" + username
+        req = requests.get(url_req)
         # Подумать над логикой обработки исключений
-        if r.status_code == 200:
-            resp = r.json()
-            if resp["username"] == "Not_Found":
+        if req.status_code == 200:
+            user = req.json()
+            if user["username"] == "Not_Found":
                 error = None
             else:
                 error = "User {0} is already registered.".format(username)
@@ -78,24 +76,20 @@ def register():
             error = "Username is required."
         elif not password:
             error = "Password is required."
-        # elif user is not None:
-        #     error = "User {0} is already registered.".format(username)
-
         if error is None:
             password_hash = generate_password_hash(password)
-            url_req = BASE_URL + "author_new"
+            url_req = BASE_URL + "author/"
             headers = {'content-type': 'application/json'}
             data_user = {"username": username, "password_hash": password_hash}
-            r = requests.post(url_req, data=json.dumps(data_user), headers=headers)
-            if r.status_code == 200:
+            req = requests.post(url_req, data=json.dumps(data_user), headers=headers)
+            if req.status_code == 200:
                 message = "You registered as {0}. You may login and create, " \
                       "edit and delete your post!".format(username)
                 flash(message)
                 return redirect(url_for("auth.login"))
             else:
-                error = "Not Registered -- " + str(r.status_code)
-
-        flash(error)
+                error = "Not registered author {0} -- ".format(username) + str(req.status_code)
+                flash(error)
 
     return render_template("auth/register.html")
 
@@ -110,11 +104,13 @@ def login():
         error = None
         user = None
 
-        url_req = BASE_URL + username + "/author"
-        r = requests.get(url_req)
+        url_req = BASE_URL + "author/" + username
+        req = requests.get(url_req)
 
-        if r.status_code == 200:
-            user = r.json()
+        if req.status_code == 200:
+            user = req.json()
+            if user["username"] == "Not_Found":
+                user = None
 
         if user is None:
             error = "Incorrect username."
