@@ -92,14 +92,17 @@ def update(id):
         if error is not None:
             flash(error)
         else:
-            conn = get_conn_db()
-            cur = conn.cursor()
-            cur.execute(
-                "UPDATE post SET title = %s, body = %s WHERE id = %s", (title, body, id)
-            )
-            cur.close()
-            conn.commit()
-            conn.close()
+            url_req = BASE_URL + "posts/" + str(id)
+            headers = {'content-type': 'application/json'}
+            data_post = {"title": title, "body": body, "id": id}
+
+            req = requests.put(url_req, data=json.dumps(data_post), headers=headers)
+            if req.status_code == 200:
+                message = "You update your post!"
+                flash(message)
+            else:
+                error = "Not updated post -- " + str(req.status_code)
+                flash(error)
 
             return redirect(url_for("blog.index"))
 

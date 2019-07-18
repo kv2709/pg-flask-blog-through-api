@@ -45,7 +45,6 @@ def load_logged_in_user():
         url_req = BASE_URL + "author/" + str(user_id)
         req = requests.get(url_req)
         g.user = req.json()
-        print("load_logged_in_user")
 
 
 @bp.route("/register", methods=("GET", "POST"))
