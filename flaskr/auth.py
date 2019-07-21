@@ -59,7 +59,6 @@ def register():
         password = request.form["password"]
 
         error = None
-        user = None
 
         url_req = BASE_URL + "author/" + username
         req = requests.get(url_req)

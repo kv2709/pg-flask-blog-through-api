@@ -1,9 +1,7 @@
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
-
 from flaskr.auth import login_required
-
-from flaskr.db import list_tp_to_list_dict, tp_to_dict, get_conn_db, BASE_URL
+from flaskr.db import BASE_URL
 
 import requests
 import json
@@ -75,11 +73,11 @@ def create():
     return render_template("blog/create.html")
 
 
-@bp.route("/<int:id>/update", methods=("GET", "POST"))
+@bp.route("/<int:post_id>/update", methods=("GET", "POST"))
 @login_required
-def update(id):
+def update(post_id):
     """Update a post if the current user is the author."""
-    post = get_post(id)
+    post = get_post(post_id)
 
     if request.method == "POST":
         title = request.form["title"]
@@ -92,9 +90,9 @@ def update(id):
         if error is not None:
             flash(error)
         else:
-            url_req = BASE_URL + "posts/" + str(id)
+            url_req = BASE_URL + "posts/" + str(post_id)
             headers = {'content-type': 'application/json'}
-            data_post = {"title": title, "body": body, "id": id}
+            data_post = {"title": title, "body": body, "id": post_id}
 
             req = requests.put(url_req, data=json.dumps(data_post), headers=headers)
             if req.status_code == 200:
@@ -109,15 +107,15 @@ def update(id):
     return render_template("blog/update.html", post=post)
 
 
-@bp.route("/<int:id>/delete", methods=("POST",))
+@bp.route("/<int:post_id>/delete", methods=("POST",))
 @login_required
-def delete(id):
+def delete(post_id):
     """Delete a post.
 
     Ensures that the post exists and that the logged in user is the
     author of the post.
     """
-    url_req = BASE_URL + "posts/" + str(id)
+    url_req = BASE_URL + "posts/" + str(post_id)
     req = requests.delete(url_req)
     if req.status_code == 200:
         message = "You deleted your post!"
