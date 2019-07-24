@@ -19,8 +19,8 @@ def index():
 
 def get_post(post_id, check_author=True):
     """Get a post and its author by id.
-
-    Checks that the id exists and optionally that the current user is
+    Отдает все посты и их авторов по id
+    Checks проверяет that the id exists and optionally that the current user is
     the author.
 
     :param post_id: id of post to get
@@ -111,7 +111,6 @@ def update(post_id):
 @login_required
 def delete(post_id):
     """Delete a post.
-
     Ensures that the post exists and that the logged in user is the
     author of the post.
     """
