@@ -1,8 +1,5 @@
 from psycopg2 import connect
-# Local hosting
-# BASE_URL = "http://127.0.0.1:8000/api/"
 
-# Production hosting
 BASE_URL = "https://pg-flask-rest.herokuapp.com/api/"
 
 
