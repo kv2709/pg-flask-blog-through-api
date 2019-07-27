@@ -62,7 +62,7 @@ def register():
 
         url_req = BASE_URL + "author/" + username
         req = requests.get(url_req)
-        # Подумать над логикой обработки исключений
+
         if req.status_code == 200:
             user = req.json()
             if user["username"] == "Not_Found":

@@ -120,7 +120,7 @@ def delete(post_id):
         message = "You deleted your post!"
         flash(message)
     else:
-        error = "Not updated post -- " + str(req.status_code)
+        error = "Not deleted post -- " + str(req.status_code)
         flash(error)
 
     return redirect(url_for("blog.index"))
