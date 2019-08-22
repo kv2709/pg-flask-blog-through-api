@@ -1,4 +1,7 @@
 from flask import Flask
+from flask_bootstrap import Bootstrap
+
+bootstrap = Bootstrap()
 
 
 def create_app(test_config=None):
@@ -10,6 +13,7 @@ def create_app(test_config=None):
 
     from flaskr import auth, blog
 
+    bootstrap.init_app(app)
     app.register_blueprint(auth.bp)
     app.register_blueprint(blog.bp)
 
