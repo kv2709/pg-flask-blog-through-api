@@ -11,6 +11,10 @@ bp = Blueprint('blog', __name__)
 
 @bp.route("/")
 def index():
+    """
+    Звпрос к API по url "posts/" и получение из базы всех постов
+    :return: передача содержимого всех постов в шаблон blog/index.html
+    """
     url_req = BASE_URL + "posts/"
     req = requests.get(url_req)
     lst_bd = req.json()
@@ -18,16 +22,16 @@ def index():
 
 
 def get_post(post_id, check_author=True):
-    """Get a post and its author by id.
+    """
     Отдает все посты и их авторов по id
-    Checks проверяет that the id exists and optionally that the current user is
-    the author.
+    check_author проверяет что данный id существует
+    и опционально, что текущий пользователь user является автором author.
 
-    :param post_id: id of post to get
-    :param check_author: require the current user to be the author
-    :return: the post with author information
-    :raise 404: if a post with the given id doesn't exist
-    :raise 403: if the current user isn't the author
+    :param post_id: id поста для get запроса
+    :param check_author: требование проверки текущего пользователя на авторство
+    :return: содержание поста с информаий об авторе
+    :raise 404: если посто с таким id не существует
+    :raise 403: если текущимй пользователь не является автором
     """
 
     url_req = BASE_URL + "posts/" + str(post_id)
@@ -46,7 +50,7 @@ def get_post(post_id, check_author=True):
 @bp.route("/create", methods=("GET", "POST"))
 @login_required
 def create():
-    """Create a new post for the current user."""
+    """Создает новый пост текущего поьзлователя"""
     if request.method == "POST":
         title = request.form["title"]
         body = request.form["body"]
@@ -76,7 +80,7 @@ def create():
 @bp.route("/<int:post_id>/update", methods=("GET", "POST"))
 @login_required
 def update(post_id):
-    """Update a post if the current user is the author."""
+    """Обновляет в базе отредактированный автором пост"""
     post = get_post(post_id)
 
     if request.method == "POST":
@@ -110,9 +114,8 @@ def update(post_id):
 @bp.route("/<int:post_id>/delete", methods=("POST",))
 @login_required
 def delete(post_id):
-    """Delete a post.
-    Ensures that the post exists and that the logged in user is the
-    author of the post.
+    """Удаляет пост, гарантируя, что сообщение существует
+       и что зарегистрированный пользователь является автор поста
     """
     url_req = BASE_URL + "posts/" + str(post_id)
     req = requests.delete(url_req)

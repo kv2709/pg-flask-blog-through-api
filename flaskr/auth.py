@@ -1,27 +1,25 @@
 import functools
-
-from flask import (
-    Blueprint,
-    flash,
-    g,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
-from werkzeug.security import check_password_hash, generate_password_hash
-
-from flaskr.db import BASE_URL
-
 import json
 import requests
+from flask import (Blueprint,
+                   flash,
+                   g,
+                   redirect,
+                   render_template,
+                   request,
+                   session,
+                   url_for,
+                   )
+from werkzeug.security import check_password_hash, generate_password_hash
+from flaskr.db import BASE_URL
+
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 def login_required(view):
-    """View decorator that redirects anonymous users to the login page."""
+    """View декоратор, который анонимного пользователя
+       переводин на страницу регистрации """
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
@@ -35,8 +33,9 @@ def login_required(view):
 
 @bp.before_app_request
 def load_logged_in_user():
-    """If a user id is stored in the session, load the user object from
-    the database into ``g.user``."""
+    """Если id пользователя сохранен в сессии,
+       загрузить из базы данные об этом пользователе
+       и сохранить их в переменной  ``g.user``."""
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -44,15 +43,17 @@ def load_logged_in_user():
     else:
         url_req = BASE_URL + "author/" + str(user_id)
         req = requests.get(url_req)
-        g.user = req.json()
+        user = req.json()
+        if user["author_id"] == "Not_Found":
+            g.user = None
+        else:
+            g.user = user
 
 
 @bp.route("/register", methods=("GET", "POST"))
 def register():
-    """Register a new user.
-
-    Validates that the username is not already taken. Hashes the
-    password for security.
+    """Регистрация нового пользователся с проверкой на существование
+    такого имени в базе. Запись имени и хешированного пароля в базу
     """
     if request.method == "POST":
         username = request.form["username"]
@@ -94,7 +95,8 @@ def register():
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
-    """Log in a registered user by adding the user id to the session."""
+    """Вход пользователя с добавлением его id
+       в сессию с очисткой предыдущих ее параметров"""
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -116,7 +118,6 @@ def login():
             error = "Incorrect password."
 
         if error is None:
-            # store the user id in a new session and return to the index
             session.clear()
             session["user_id"] = user["id"]
             return redirect(url_for("index"))
@@ -128,6 +129,6 @@ def login():
 
 @bp.route("/logout")
 def logout():
-    """Clear the current session, including the stored user id."""
+    """Очистка текущей сессии"""
     session.clear()
     return redirect(url_for("index"))
